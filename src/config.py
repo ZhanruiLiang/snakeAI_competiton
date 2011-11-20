@@ -1,0 +1,14 @@
+frame_rate = 20
+screen_size = 800, 600
+dash_pos = 0, 0
+# the whole dash board's size
+dash_size = 200, 600
+# the upper-left cornor's position
+field_pos = 200, 0
+# the geometry of field
+field_size = 600, 600
+# how many grid are there in field
+field_size1 = 30, 30
+# the grid must be a square
+grid_size = 20, 20
+

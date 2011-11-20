@@ -1,0 +1,96 @@
+\documentclass[11pt,a4paper]{article}
+
+\XeTeXlinebreaklocale "zh"
+\XeTeXlinebreakskip = 0pt plus 1pt minus 0.1pt
+
+\usepackage[left = 2.8cm, right = 3.2cm, bottom = 3cm]{geometry}
+\usepackage[BoldFont,SlantFont]{xeCJK}
+\usepackage{graphicx}
+\usepackage{verbatim}
+\usepackage{fancyvrb}
+\usepackage{listings}
+
+\newcommand{\classname}[1]{{\itshape{}#1}}
+\setCJKmainfont{FangSong}
+%\setCJKfamilyfont{quote}[]{KaiTi}
+%\setCJKfamilyfont{normal}[]{FangSong}
+%\CJKfamily{normal}
+
+\setcounter{secnumdepth}{0}
+
+\begin{document}
+\lstset{
+  language=Python,
+  showstringspaces=false,
+  formfeed=\newpage,
+  tabsize=4,
+  commentstyle=\itshape,
+  basicstyle=\ttfamily,
+  morekeywords={models, lambda, forms}
+}
+
+\title{Snake AI reference}
+\author{Ray}
+\maketitle
+\section{Introduce}
+This is a snake game
+
+A snake can go either up, down, left, right. When it's head touch a food, it eat the food and get the score of the food.
+When it's head crashes into any snake's body(including it self) or a block, it die and it's body become food. As a specific case, if two snakes' head
+crash together, both die.
+
+\section{To be a participent}
+The only things you should care are the \classname{Field} and\classname{Snake} and \classname{FieldObj}.
+
+Let's demonstrate it by examples!
+
+First, suppose field is a instance of Field,
+\begin{lstlisting}
+	field = Field((20, 10))
+\end{lstlisting}
+Then you can use the method field.getContentAt(pos) to get the content at pos, it will return a FieldObj.
+This class(and it's derived classes) has the members which is useful to you,
+\begin{itemize}
+	\item FieldObj.type
+	\item FieldObj.pos
+	\item Food.score
+	\item Body.owner
+\end{itemize}
+
+Here is more examples,
+\begin{lstlisting}
+content = field.getContentAt((10, 2))
+if content == None:
+	# it's an empty place
+elif content.type == Field.FOOD:
+	print content.score
+elif content.type == Field.BODY:
+	print content.owner
+\end{lstlisting}
+
+All this kind of constants are:
+\begin{itemize}
+	\item Field.FOOD
+	\item Field.BODY
+	\item Field.BLOCK
+	\item Field.LEFT
+	\item Field.DOWN
+	\item Field.RIGHT
+	\item Field.UP
+\end{itemize}
+
+What you actually should do is to derive the base snake class Snake.
+Your class should implement the methods:
+\begin{description}
+	\item[response()] This will be called in each game loop, it should return a direction it choose to go in this loop.
+\end{description}
+
+And the these members may be useful to you:
+\begin{description}
+	\item[body] It's a list, each of it's element is a Body class, a derive class of FieldObj.
+	\item[direction] It's one of Field.UP, Field.DOWN, Field.LEFT, Field.RIGHT.
+	\item[field] The snake is on this field
+	\item[name] The snake's name, shound not conflict with others
+\end{description}
+See the example code file "stupidAI.py" for more details.
+\end{document}
