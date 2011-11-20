@@ -5,11 +5,12 @@ dirs = Field.dirs
 X, Y = 0, 1
 
 class Snake_AI(Snake):
-	def __init__(self,name, field, body, direction, color=0x0000ff, res_path='res/snake.png'):
-		Snake.__init__(self, name, field, body, direction, color, res_path)
+	def __init__(self,name, field, body, direction, res_path='res/snake.png'):
+		Snake.__init__(self, name, body, direction, res_path)
 		self._path = []
 		self._timer = pygame.time.Clock()
 		self.W, self.H = field.size
+
 	def _can_go_food(self, pos):
 		c = self.field.getContentAt(pos)
 		if c == None or c.type == Field.FOOD:

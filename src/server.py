@@ -11,30 +11,6 @@ X, Y = 0, 1
 Left, Down, Right, Up = Field.LEFT, Field.DOWN, Field.RIGHT, Field.UP
 		
 
-class Controller:
-	def __init__(self, snake, keys=None):
-		"""
-		snake: the snake to be control
-		keys = [left, down, right, up]
-		"""
-		self.snake = snake
-		if keys == None:
-			self.keys = ['a', 's', 'd', 'w']
-		else:
-			self.keys = keys
-		self.directs = {}
-		d = (Left, Down, Right, Up)
-		for i in xrange(4):
-			self.directs[self.keys[i]] = d[i]
-		
-	def control(self, event):
-		key = event.unicode
-		try:
-			direct = self.directs[key] 
-		except KeyError:
-			return
-		if (direct, self.snake.direction) not in ((Right, Left), (Left, Right), (Up, Down), (Down, Up)):
-			self.snake.direction = direct
 def init():
 	pygame.display.init()
 	pygame.font.init()
@@ -70,9 +46,9 @@ def main():
 	init1 = [(i, fSize[1]/2) for i in xrange(fSize[0]-2, fSize[0]-6, -1)]
 	init2 = [(fSize[0]/2, i) for i in xrange(1, 5)]
 
-	snake0 = AI1.Snake_AI('Ray', field, init0, Right, 0x223399, 'res/snake1.png')
-	snake1 = AI1.Snake_AI('Pest', field, init1 , Left, 0x008800, 'res/snake2.png')
-	snake1 = AI1.Snake_AI('ddmbr', field, init2 , Left, 0x008800, 'res/snake.png')
+	snake0 = AI1.Snake_AI('Ray', field, init0, Right, 'res/snake1.png')
+	snake1 = AI1.Snake_AI('Pest', field, init1 , Left, 'res/snake2.png')
+	snake1 = AI1.Snake_AI('ddmbr', field, init2 , Left, 'res/snake.png')
 
 	# controller0 = Controller(snake0)
 	render = Render(field, screen)
