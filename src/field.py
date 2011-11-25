@@ -2,15 +2,20 @@ import itertools
 import pygame
 import random
 from tracker import Tracker
+from baseobj import *
+from snake import BaseSnake
 
-class Field:
+X, Y = 0, 1
+
+class Field(object):
 	"""
 	members:
 
 	size:
 		(w, h),indicates that the field is a w x h grid borad
 	register()
-	getContentAt():
+	acceptCommand(snake_name, direction)
+	getContentAt(pos):
 		return the content, *NOT* a list
 	---------------------------------------
 	note that in the coordinate system,
@@ -20,7 +25,7 @@ class Field:
 	lower-right=(w,h)
 	"""
 	LEFT, DOWN, RIGHT, UP = 0, 1, 2, 3
-	FOOD, BLOCK, BODY = 'food', 'block', 'body'
+	FOOD, BLOCK, BODY, EMPTY = Food.type, Block.type, Body.type, Empty.type
 	dirs = ((-1, 0), (0, 1), (1, 0), (0, -1))
 
 	def __init__(self, size):
@@ -33,13 +38,15 @@ class Field:
 		for i,j in itertools.product(xrange(n), xrange(m)):
 			self._board[i, j] = []
 
-		self.tracker = Tracker('runlog.bz2')
+		# self.tracker = Tracker('runlog.bz2')
 
 	def register(self, snake):
 		"""
 		register and init a snake on the board
 		"""
 		print 'Register a snake named %s'%snake.name
+
+		# test if the snake already exist
 		for s in self._snakes:
 			if s.name == snake.name:
 				raise SnakeNameError("There is already a snake named %s, %s"%(s.name, s))
@@ -56,9 +63,13 @@ class Field:
 			else:
 				snake.body = snake.body[:snake.body.index(node)]
 				if node == snake.body[0]:
+					# this means the snake can not be initialize on the place
 					raise self.RegisterError(self.getContentAt(node.pos))
 				else:
 					break
+
+	def acceptCommand(self, name, direction):
+		self._commands[name] = direction
 
 	def getContentAt(self, pos):
 		"""
@@ -77,21 +88,25 @@ class Field:
 		"""
 		run the game
 		"""
+		# backup the snakes' tail in a dict, if a snake eat a food then it can retrieve it's tail
 		backup = {}
-		commands = {}
-		# recieve commands
-		for snake in self._snakes:
-			commands[snake.name] = snake.response()
+		# commands[sname], the next direction of the snake
 
 		# move the snakes
 		for snake in self._snakes:
-			d = snake.direction
-			next_p = ((snake.body[0].pos[0] + self.dirs[d][0])% self.size[0],
-					(snake.body[0].pos[1] + self.dirs[d][1])% self.size[1])
-			snake.body.insert(0, Body(snake))
-			self._addContentAt(next_p, snake.body[0])
-			self._rmContentAt(snake.body[-1].pos, snake.body[-1])
-			backup[snake.name] = snake.body.pop()
+			dx, dy = self.dirs[self._commands[snake.name]]
+			p = snake.body[0].pos
+			next_p = (p[X] + dx) % self.size[X], (p[Y] + dy) % self.size[Y]
+			if len(snake.body) > 1 and snake.body[1].pos != next_p:
+				snake.body.insert(0, Body(snake))
+				self._addContentAt(next_p, snake.body[0])
+				self._rmContentAt(snake.body[-1].pos, snake.body[-1])
+				backup[snake.name] = snake.body.pop()
+			else:
+				# this command can not be executed
+				pass
+		# clear the commands
+		self._commands = {}
 
 		# judge by the rules
 		to_die = []
@@ -187,45 +202,17 @@ class Field:
 		print '%s die'%snake.name
 		snake.statistic.die += 1
 		# self.tracker.log('die %s'%snake, snake.body[0].pos)
+
 		# remove the bodies
 		for b in snake.body:
 			self._rmContentAt(b.pos, b)
+
 		# some part of body change to food
 		# for b in snake.body[1::4]:
 		# 	self._addContentAt(b.pos, Food(0x660022))
+
 		self._snakes.remove(snake)
 		snake.alive = False
-
-
-class FieldObj:
-	type = None
-	pos = 0, 0
-	def __init__(self, pos=None):
-		self.pos = pos
-
-	def __repr__(self):
-		return "<%s at %s>"%(self.type, self.pos)
-
-class Food(FieldObj):
-	type = Field.FOOD
-	score = 5
-	
-	def merge(self, other):
-		self.score += other.score
-
-class Block(FieldObj):
-	type = Field.BLOCK
-
-class Body(FieldObj):
-	type = Field.BODY
-	def __init__(self, owner, pos=None):
-		"""
-		owner: the snake who own this block of body
-		"""
-		self.owner = owner
-		self.pos = pos
-	def __repr__(self):
-		return "<%s at %s, owner=%s>"%(self.type, self.pos, self.owner.name)
 
 class Statistic(object):
 	"""

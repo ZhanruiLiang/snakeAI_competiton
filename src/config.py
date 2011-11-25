@@ -11,4 +11,8 @@ field_size = 600, 600
 field_size1 = 30, 30
 # the grid must be a square
 grid_size = 20, 20
-
+# server-client stuff
+server_port = 50500
+client_port = 50500
+server_backlog = 5
+data_maxsize = 1024

@@ -1,4 +1,5 @@
-from field import Snake, Field
+from field import Field
+from snake import Snake
 import pygame
 
 dirs = Field.dirs
@@ -6,9 +7,9 @@ X, Y = 0, 1
 
 class Snake_AI(Snake):
 	def __init__(self,name, field, body, direction, res_path='res/snake.png'):
-		Snake.__init__(self, name, body, direction, res_path)
+		Snake.__init__(self, name, body, field, direction, res_path)
 		self._path = []
-		self._timer = pygame.time.Clock()
+		# self._timer = pygame.time.Clock()
 		self.W, self.H = field.size
 
 	def _can_go_food(self, pos):

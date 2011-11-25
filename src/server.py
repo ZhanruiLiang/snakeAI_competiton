@@ -1,33 +1,17 @@
 import pygame
-from random import randint
 import itertools
-from field import *
-from render import Render
-import AI1
-# import cProfile
 import config
+import sys
+import select
+from random import randint
+from field import Field
+from baseobj import *
 
 X, Y = 0, 1
-Left, Down, Right, Up = Field.LEFT, Field.DOWN, Field.RIGHT, Field.UP
-		
 
-def init():
-	pygame.display.init()
-	pygame.font.init()
-
-def quitclean():
-	pygame.display.quit()
-	pygame.font.quit()
-
-def main():
-	init()
-
-	sSize = config.screen_size #the screen size
+def initField(field):
 	fSize = config.field_size1 # the field size
 
-	screen = pygame.display.set_mode(sSize, 0, 32)
-	pygame.display.set_caption('The VimSnakes')
-	field = Field(fSize)
 	# add block
 	for i in xrange(fSize[0]):
 		for j in xrange(fSize[1]):
@@ -40,41 +24,58 @@ def main():
 	for i in xrange(50):
 		field._add_food()
 
+def startServer():
+	# return a socket obj as server
+	server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	server.bind(('', config.server_port))
+	server.listen(config.server_backlog)
+	return server
+		
+def main():
+	field = Field(fSize)
+	initField(field)
+	server = startServer()
+	input = [server, sys.stdin]
 
-	# add snake
-	init0 = [(i, fSize[1]/2) for i in xrange(1, 5)]
-	init1 = [(i, fSize[1]/2) for i in xrange(fSize[0]-2, fSize[0]-6, -1)]
-	init2 = [(fSize[0]/2, i) for i in xrange(1, 5)]
-
-	snake0 = AI1.Snake_AI('Ray', field, init0, Right, 'res/snake1.png')
-	snake1 = AI1.Snake_AI('Pest', field, init1 , Left, 'res/snake2.png')
-	snake1 = AI1.Snake_AI('ddmbr', field, init2 , Left, 'res/snake.png')
-
-	# controller0 = Controller(snake0)
-	render = Render(field, screen)
-	
-	quit = False
 	frame_rate = config.frame_rate
-	timer = pygame.time.Clock()
-	frame = 0
-	try:
-		while not quit:
-			events = pygame.event.get()
-			for event in events:
-				if event.type == pygame.QUIT:
-					quit = True
-				# elif event.type == pygame.KEYDOWN:
-				# 	controller0.control(event)
-			field.loop()
 
-			render.render()
-			pygame.display.flip()
-			timer.tick(frame_rate)
-			# print 'FPS:',timer.get_fps()
-	finally:
-		field.tracker.close()
+	quit = False
+	tm = pygame.time.Clock()
+
+	while not quit:
+		tm.tick()
+		field.loop()
+		time_max = max(100 - tm.tick(), 50)
+		time_cost = 0
+		while time_cost < time_max:
+			tm.tick()
+			input_ready, output_ready, exceptready = select.select(input, [], [], time_max - time_cost)
+			for s in input_ready:
+				if s == server:
+					client, address = server.accept()
+					input.append(client)
+				elif s == sys.stdin:
+					# recieve command from stdin, commands can be:
+					#   start #   stop #   restart #   quit
+					command = sys.stdin.readline().rstrip()
+					if command == 'quit':
+						quit = True
+				else:
+					# handle a client socket
+					data = s.recv(config.data_maxsize)
+					if data:
+						# recieved data, begin handle it
+						# TODO
+						pass
+					else:
+						# maybe connection lost
+						s.close()
+						input.remove(s)
+			time_cost += tm.tick()
+
+		tm.tick(frame_rate)
+		# print 'FPS:',tm.get_fps()
 	
-	quitclean()
 	print 'Bye'
 		
 if __name__ == '__main__':

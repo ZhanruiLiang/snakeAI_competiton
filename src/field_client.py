@@ -10,19 +10,20 @@ class FieldClient:
 	BLOCK --|
 	size
 
-	----access by system
+	----access by system----------------------------
 	_snakes
 	_foods
 	_blocks
 	_board
 
-	------------------------------------------
+	------------------------------------------------
 	methods:
-	----call by user
+	----call by user--------------------------------
 	getContentAt(pos): return the content at pos
 	sendCommand(direction): send out the direction you want to go
 
-	----call by client program
+	----call by client program----------------------
+	sendCommand(direction)
 	sync()
 	connect(server): connect to the server
 	
