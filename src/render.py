@@ -1,5 +1,5 @@
 import pygame
-from field import *
+from field_client import *
 import config
 
 X, Y = 0, 1
@@ -99,6 +99,10 @@ class Render:
 			dashboard.blit(font.render(line, True, self._font_color), (x0, y0))
 			y0 += font.size('')[1]+2
 
+	def _write_text(self, text, pos, color = None):
+		color = color or self._font_color
+		self.surface.blit(self._font.render(text, True, color), pos)
+
 	def render_dash(self):
 		x0, y0 = 5, 70
 		x, y = x0, y0
@@ -131,11 +135,11 @@ class Render:
 
 	def render_food(self):
 		for food in self.field._foods:
-			self._surface_field.blit(self._pic_food, (self.grid_size[X] * food.pos[X], self.grid_size[Y] * food.pos[Y]))
+			self._surface_field.blit(self._pic_food, (self.grid_size[X] * food[X], self.grid_size[Y] * food[Y]))
 
 	def render_block(self):
 		for block in self.field._blocks:
-			self._surface_field.blit(self._pic_block, (self.grid_size[X] * block.pos[X], self.grid_size[Y] * block.pos[Y]))
+			self._surface_field.blit(self._pic_block, (self.grid_size[X] * block[X], self.grid_size[Y] * block[Y]))
 
 	def grid_to_real(self, pos):
 		return pos[X] * self.grid_size[X], pos[Y] * self.grid_size[Y]
@@ -148,21 +152,20 @@ class Render:
 			# pic_snake = { 'head': ..., 'tail': ..., ((0, -1), (1, 0)): ..., ((0, 1), (1, 0)): ...}
 			pic_snake = self._pic_snakes[snake.name]
 			# render head
-			head = snake.body[0].pos
+			head = snake.body[0]
 			pic = pic_snake['head'][(snake.direction + 1) % 4]
 			self._surface_field.blit(pic, self.grid_to_real(head))
 
 			if len(snake.body) == 1: continue
 			# render tail
-			tail = snake.body[-1].pos
-			prev = snake.body[-2].pos
+			tail = snake.body[-1]
+			prev = snake.body[-2]
 			tail_direction = (Field.dirs.index((tail[X] - prev[X], tail[Y] - prev[Y])) + 3) % 4
 			pic = pic_snake['tail'][tail_direction]
 			self._surface_field.blit(pic, self.grid_to_real(tail))
 
 			# render body
-			for sec0, sec1, sec2 in zip(snake.body[:-2], snake.body[1:-1], snake.body[2:]):
-				p0, p1, p2 = sec0.pos, sec1.pos, sec2.pos
+			for p0, p1, p2 in zip(snake.body[:-2], snake.body[1:-1], snake.body[2:]):
 				key = (p0[X] - p1[X], p0[Y] - p1[Y]), (p2[X] - p1[X], p2[Y] - p1[Y])
 				keyp = key[1], key[0]
 				pic = pic_snake.get(key, 0) or pic_snake.get(keyp, 0)
@@ -189,3 +192,28 @@ class Render:
 		self.surface.blit(self._surface_field, config.field_pos)
 		self._frame += 1
 		self._frame %= self.MAX_FRAME
+
+	def render_coor(self):
+		W, H = config.field_size1
+		gW, gH = self.grid_size
+		x0, y0 = config.field_pos
+		for x in xrange(W):
+			self._write_text(str(x)[-1:], (x0 + x * gW, y0 + 0 * gH))
+			self._write_text(str(x)[-1:], (x0 + x * gW, y0 + (H-1) * gH))
+		for y in xrange(1, H):
+			self._write_text(str(y)[-1:], (x0 + 0 * gW, y0 + y * gH))
+			self._write_text(str(y)[-1:], (x0 + (W-1) * gW, y0 + y * gH))
+
+		for x in xrange(W):
+			pygame.draw.line(self.surface, 0, (x0+x*gW, y0), (x0+x*gW, (H-1)*gH))
+		for y in xrange(H):
+			pygame.draw.line(self.surface, 0, (x0, y0 + y*gH), (x0+(W-1)*gW, y0 + y*gH))
+			
+	def render_path(self, path):
+		size = self.grid_size
+		color = (0x88, 0, 0, 0x22)
+		s = pygame.Surface(size).convert_alpha()
+		s.fill(color)
+		for x, y in path or []:
+			rect = (config.field_pos[X] + x * size[X], config.field_pos[Y] + y * size[Y])
+			self.surface.blit(s, rect)

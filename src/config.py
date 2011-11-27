@@ -1,4 +1,4 @@
-frame_rate = 20
+frame_rate = 15
 screen_size = 800, 600
 dash_pos = 0, 0
 # the whole dash board's size
@@ -15,4 +15,6 @@ grid_size = 20, 20
 server_port = 50500
 client_port = 50500
 server_backlog = 5
-data_maxsize = 1024
+data_maxsize = 4096
+# the max waited round, when reach the value, the game will be reset
+max_waited = 10

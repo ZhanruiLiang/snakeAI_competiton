@@ -1,10 +1,12 @@
 """
-The Snake class is the base class of other snakeAI class, to derive it,
+The BaseSnake class is the base class of other AISnake class, to derive it,
 you should implement it's response method
 
 Author: Ray
 Last modified: Sunday, November 20, 2011 PM12:19:42 HKT 
 """
+from baseobj import *
+
 class BaseSnake(object):
 	"""
 	members:
@@ -20,15 +22,25 @@ class BaseSnake(object):
 		body: =[(i0, j0), (i1, j1), ... ]
 		"""
 		self.name = name
-		self.body = [Body(self, pos=p) for p in body]
+		if body:
+			self.body = [Body(self, pos=p) for p in body]
 		self.direction = direction
 		self.field = field
 		self.statistic = None
 
 	def __repr__(self):
+		# TODO
 		return "<Snake names %s, direction=%s>"%(self.name, self.direction)
 
-class Snake(BaseSnake):
+class RenderSnake(BaseSnake):
+	def __init__(self, name, body, direction, stat, res_path='res/snake1.png'):
+		self.name = name
+		self.body = body
+		self.direction = direction
+		self.statistic = stat
+		self.res_path = res_path
+
+class AISnake(BaseSnake):
 	"""
 	append members:
 
@@ -36,9 +48,9 @@ class Snake(BaseSnake):
 	response(): 
 		calculate to response
 	"""
-	def __init__(self, name, body, direction, field, res_path='res/snake.png'):
+	def __init__(self, name, field, res_path='res/snake.png'):
 		self.res_path = res_path
-		super.__init__(self, name, body, direction, field)
+		super(AISnake, self).__init__(name, None, None, field)
 
 	def response(self):
 		pass

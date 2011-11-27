@@ -14,9 +14,12 @@ class Field(object):
 	size:
 		(w, h),indicates that the field is a w x h grid borad
 	register()
+	reset()
+	is_over()
 	acceptCommand(snake_name, direction)
 	getContentAt(pos):
 		return the content, *NOT* a list
+	newInitPos(): return (initpos, direction)
 	---------------------------------------
 	note that in the coordinate system,
 	upper-left=(0, 0),
@@ -30,15 +33,29 @@ class Field(object):
 
 	def __init__(self, size):
 		self.size = size
-		self._snakes = []
-		self._foods = []
-		self._blocks = []
+		self.reset()
+
+	def reset(self):
+		self.round = 0
+		self.snakes = []
+		self.foods = []
+		self.blocks = []
 		self._board = {}
+		self._commands = {}
+
+		size = self.size
+		self._initpos = [([(i, size[Y]/2) for i in xrange(5, 1, -1)], self.RIGHT),
+				([(i, size[Y]/2) for i in xrange(size[X] - 5, size[X] - 1)], self.LEFT)
+				]
+		self._next_initpos = 0
 		n, m = size
 		for i,j in itertools.product(xrange(n), xrange(m)):
 			self._board[i, j] = []
 
 		# self.tracker = Tracker('runlog.bz2')
+
+	def isWaiting(self):
+		return self.snakes == []
 
 	def register(self, snake):
 		"""
@@ -47,10 +64,12 @@ class Field(object):
 		print 'Register a snake named %s'%snake.name
 
 		# test if the snake already exist
-		for s in self._snakes:
+		for s in self.snakes:
 			if s.name == snake.name:
-				raise SnakeNameError("There is already a snake named %s, %s"%(s.name, s))
-		self._snakes.append(snake)
+				# raise SnakeNameError("There is already a snake named %s, %s"%(s.name, s))
+				print "There is already a snake named %s, %s"%(s.name, s)
+				return
+		self.snakes.append(snake)
 		snake.alive = True
 		snake.statistic = Statistic()
 		for node in snake.body:
@@ -84,17 +103,26 @@ class Field(object):
 		else:
 			raise self.OverlapError(v)
 
+	def newInitPos(self):
+		x = self._next_initpos
+		self._next_initpos += 1
+		self._next_initpos %= len(self._initpos)
+		return self._initpos[x]
+
 	def loop(self):
 		"""
 		run the game
 		"""
+		self.round += 1
 		# backup the snakes' tail in a dict, if a snake eat a food then it can retrieve it's tail
 		backup = {}
-		# commands[sname], the next direction of the snake
 
 		# move the snakes
-		for snake in self._snakes:
-			dx, dy = self.dirs[self._commands[snake.name]]
+		for snake in self.snakes:
+			snake.direction = self._commands.get(snake.name, None)
+			if snake.direction == None:
+				snake.direction = 0
+			dx, dy = self.dirs[snake.direction]
 			p = snake.body[0].pos
 			next_p = (p[X] + dx) % self.size[X], (p[Y] + dy) % self.size[Y]
 			if len(snake.body) > 1 and snake.body[1].pos != next_p:
@@ -110,7 +138,7 @@ class Field(object):
 
 		# judge by the rules
 		to_die = []
-		for snake in self._snakes:
+		for snake in self.snakes:
 			b = snake.body[0]
 			v = self._board[b.pos]
 			for i in v:
@@ -130,30 +158,17 @@ class Field(object):
 			self._die_snake(snake)
 
 		# update statistics
-		for snake in self._snakes:
+		for snake in self.snakes:
 			snake.statistic.length = len(snake.body)
 
 		self._add_food()
-
-	class Error(Exception):
-		def __init__(self, value):
-			self.value = value
-		def __str__(self):
-			return repr(self.value)
-	class OverlapError(Error):
-		pass
-	class SnakeNameError(Error):
-		pass
-	class RegisterError(Error):
-		pass
-
 
 	def _eat(self, snake, food):
 		snake.statistic.score += food.score
 		self._rmContentAt(food.pos, food)
 
 	def _add_food(self):
-		if len(self._foods) < 3:
+		if len(self.foods) < 3:
 			added = False
 			while not added:
 				pos = random.randint(0, self.size[0]-1), random.randint(0, self.size[1]-1)
@@ -181,17 +196,17 @@ class Field(object):
 		if need:
 			if content.type == Field.FOOD:
 				# self.tracker.log('add food', pos)
-				self._foods.append(content)
+				self.foods.append(content)
 			elif content.type == Field.BLOCK:
 				# self.tracker.log('add %s'%content, pos)
-				self._blocks.append(content)
+				self.blocks.append(content)
 			v.append(content)
 			content.pos = pos
 		return content
 
 	def _rmContentAt(self, pos, content):
 		try:
-			self._foods.remove(content)
+			self.foods.remove(content)
 		except ValueError:
 			pass
 		self._board[pos].remove(content)
@@ -211,20 +226,43 @@ class Field(object):
 		# for b in snake.body[1::4]:
 		# 	self._addContentAt(b.pos, Food(0x660022))
 
-		self._snakes.remove(snake)
+		self.snakes.remove(snake)
 		snake.alive = False
+
+class Error(Exception):
+	def __init__(self, value):
+		self.value = value
+	def __str__(self):
+		return repr(self.value)
+
+class OverlapError(Error):
+	pass
+
+class SnakeNameError(Error):
+	pass
+
+class RegisterError(Error):
+	pass
 
 class Statistic(object):
 	"""
 	Statistic data of a snake
 	"""
-	def __init__(self):
-		self.score = 0
-		self.length = 0
-		self.die = 0
+	def __init__(self,x=None):
+		if x:
+			self.score = x[0]
+			self.length = x[1]
+			self.die = x[2]
+		else:
+			self.score = 0
+			self.length = 0
+			self.die = 0
 
 	def __reset__(self):
 		self.score = 0
 		self.length = 0
 		self.die = 0
 
+	def __repr__(self):
+		return "Statistic(%s)"%((self.score, self.length, self.die),)
+	
