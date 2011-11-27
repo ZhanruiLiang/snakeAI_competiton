@@ -1,4 +1,4 @@
-frame_rate = 35
+frame_rate = 10
 screen_size = 800, 600
 dash_pos = 0, 0
 # the whole dash board's size

@@ -27,14 +27,15 @@ class FieldClient(object):
 	methods:
 	----call by user--------------------------------
 	getContentAt(pos): return the content at pos
-	sendCommand(direction): send out the direction you want to go
 
 	----call by client program----------------------
 	sync()
+	sendCommand(direction): send out the direction you want to go
 	connect(server): connect to the server
 	join(player): join the game, seperate connect and join because client can be a audience.
 	
 	"""
+	LEFT, DOWN, RIGHT, UP = 0, 1, 2, 3
 	FOOD = Field.FOOD
 	BODY = Field.BODY
 	HEAD = 'head'
@@ -50,6 +51,7 @@ class FieldClient(object):
 		self._player = None
 		self._id = None
 		self._round = None
+		self._last_round = None
 		if server:
 			self.connect(server)
 
@@ -59,15 +61,15 @@ class FieldClient(object):
 		msg = self._send("{'cmd':'add'}")
 		if msg['cmd'] == 'success':
 			self._id = msg['id']
+			print 'synced'
 			self.sync()
 		else:
 			raise Exception(repr(msg))
 
 	def join(self, player):
-		self._player = player
 		msg = self._send("{'cmd':'join','id':%d, 'name':'%s'}"%(self._id, player.name))
 		if msg['cmd'] == 'success':
-			pass
+			self._player = player
 		else:
 			print msg['reason']
 			raise
@@ -109,7 +111,6 @@ class FieldClient(object):
 				else:
 					self._player = None
 
-			round0 = self._round
 			self._round = msg['round']
 			self._board = {}
 			board = self._board
@@ -127,12 +128,14 @@ class FieldClient(object):
 				self.quit()
 
 			# ask player to response
-			print round0, self._round
-			if round0 == 0 or round0 != self._round:
+			print self._last_round, self._round
+			if self._last_round == None or self._last_round != self._round:
 				# get into a new round
 				if self._player:
+					print 'fuck'
 					command = self._player.response()
 					self.sendCommand(command)
+					self._last_round = self._round
 		elif msg['cmd'] == 'waiting':
 			pass
 		else:

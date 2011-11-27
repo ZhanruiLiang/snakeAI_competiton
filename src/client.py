@@ -1,5 +1,5 @@
 """
-usage: client.py ai_script [host]
+usage: client.py [-h host] [-p AI]
 """
 import pygame
 import config
@@ -18,22 +18,32 @@ def quitclean():
 	pygame.display.quit()
 	pygame.font.quit()
 
+def parseOptions():
+	# return (host, AI)
+	argv = sys.argv
+	i = 1
+	host, AI = 'localhost', None
+	while i < len(argv):
+		opt = argv[i]
+		if opt == '-h':
+			host = argv[i+1]
+			i += 1
+		elif opt == '-p':
+			AI = __import__(sys.argv[i+1])
+			i += 1
+		i += 1
+	return host, AI
+
 def main():
 	init()
 
-	if len(sys.argv) >= 3:
-		host = sys.argv[2]
-	else:
-		host = 'localhost'
-	if len(sys.argv) >= 2:
-		AI = __import__(sys.argv[1])
-	else:
-		AI = None
+	host, AI = parseOptions()
 
 	field = FieldClient()
 	field.connect(host)
 	if AI:
 		snake = AI.SnakeAI(field)
+		print 'join', AI
 		field.join(snake)
 
 	sSize = config.screen_size #the screen size
@@ -58,7 +68,7 @@ def main():
 		# render.render_coor()
 		#
 		pygame.display.flip()
-		timer.tick(frame_rate)
+		timer.tick(2*frame_rate)
 		# print timer.get_fps()
 	
 	field.disconnect()

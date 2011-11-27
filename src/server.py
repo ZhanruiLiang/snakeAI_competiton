@@ -199,9 +199,9 @@ def main():
 		time_max = max(1000/frame_rate - tm.tick(), 50)
 
 		tm_fps.tick(frame_rate)
-		frame += 1
-		if frame % 50 == 0:
-			print 'FPS:',tm_fps.get_fps()
+		# frame += 1
+		# if frame % 50 == 0:
+		# 	print 'FPS:',tm_fps.get_fps()
 	print 'Bye'
 		
 if __name__ == '__main__':
