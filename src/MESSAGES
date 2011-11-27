@@ -1,0 +1,18 @@
+A message is a dict, it has some keywords:
+
+prototypes can be:
+	'add':(id) = add()
+	'leave': leave(id)
+	'join': join(id, name)
+	'quit': quit(id, name)
+	'response': success = response(id, round, direction)
+	'sync': {foods, blocks, snakes} = sync(id)
+
+	'success'
+	'fail'
+
+For example:
+	'response': response(id, round, direction)
+	means the message has the string form:
+	{'cmd': 'response', 'id':'10389084', 'round':45, 'direction':3} 
+	and {'cmd':'success'} or {'cmd':'fail', 'reason':'...'} will be returned
