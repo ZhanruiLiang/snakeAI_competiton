@@ -79,12 +79,15 @@ class FieldClient(object):
 
 	def disconnect(self):
 		"leave the server"
+		if self._player:
+			self.quit()
 		self._send("{'cmd':'leave', 'id':%d}" % self._id)
 		self.sock.close()
 
 	def _send(self, msg):
 		self.sock.send(msg)
-		result = eval(self.sock.recv(config.data_maxsize), {'__buildin__':None, 'Statistic':Statistic}, {})
+		result = self.sock.recv(config.data_maxsize)
+		result = eval(result, {'__buildin__':None, 'Statistic':Statistic}, {})
 		return result
 
 	def sync(self):
@@ -124,6 +127,7 @@ class FieldClient(object):
 				self.quit()
 
 			# ask player to response
+			print round0, self._round
 			if round0 == 0 or round0 != self._round:
 				# get into a new round
 				if self._player:
@@ -140,7 +144,7 @@ class FieldClient(object):
 		if msg['cmd'] == 'success':
 			pass
 		else:
-			raise Exception(repr(msg))
+			print >> sys.stderr, 'Warning: current round is %d, not %d'%(msg['round'],self._round)
 
 	def getContentAt(self, pos):
 		try:

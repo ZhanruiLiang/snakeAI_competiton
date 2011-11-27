@@ -15,23 +15,8 @@ fSize = config.field_size1 # the field size
 waited = 0
 # to store the name of dead players, if that client send quit, remove the name 
 # from here
-ghosts = []
+ghosts = set()
 
-
-def initField(field):
-	field.reset()
-
-	# add block
-	for i in xrange(fSize[0]):
-		for j in xrange(fSize[1]):
-			if i == 0 or i == fSize[0]-1 or j == 0 or j == fSize[1] - 1:
-				field._addContentAt((i,j), Block())
-	for y in xrange(3, 20, 7):
-		for x in xrange(7, 18):
-			field._addContentAt((x, y), Block())
-	# add food
-	for i in xrange(50):
-		field._add_food()
 
 def startServer():
 	# return a socket obj as server
@@ -86,44 +71,38 @@ def parseCommand(field, data, client):
 		clients[id][0] = None
 		if name in ghosts:
 			ghosts.remove(name)
+		client.send(msg_success)
 		print 'player %s quited the game' % (name)
 	elif cmd == 'leave':
 		# the client want to disconnect
 		id = msg['id']
 		del clients[id]
+		client.send(msg_success)
 		print 'client #%s leave this server' % (id)
 	elif cmd == 'sync':
 		id = msg['id']
-		if field.isWaiting():
-			waited += 1
-		else:
-			waited = 0
-		if waited < 5:
-			foods = [x.pos for x in field.foods]
-			blocks = [x.pos for x in field.blocks]
-			snakes = []
-			for snake in field.snakes:
-				snakes.append({'name':snake.name,
-					'body':[x.pos for x in snake.body],
-					'direction':snake.direction,
-					'stat':snake.statistic})
+		foods = [x.pos for x in field.foods]
+		blocks = [x.pos for x in field.blocks]
+		snakes = []
+		for snake in field.snakes:
+			snakes.append({'name':snake.name,
+				'body':[x.pos for x in snake.body],
+				'direction':snake.direction,
+				'stat':snake.statistic})
 
-			new_msg = {'cmd':'sync_info', 
-				'size':field.size,
-				'round':field.round,
-				'foods':foods, 'blocks':blocks, 'snakes':snakes}
-			if clients[id][0] in ghosts:
-				new_msg['youlost'] = 1
-			client.send(repr(new_msg))
-			# print 'sync at round %d' % (field.round)
-		else:
-			new_msg = "{'cmd':'waiting'}"
-			client.send(new_msg)
+		new_msg = {'cmd':'sync_info', 
+			'size':field.size,
+			'round':field.round,
+			'foods':foods, 'blocks':blocks, 'snakes':snakes}
+		if clients[id][0] in ghosts:
+			new_msg['youlost'] = 1
+		client.send(repr(new_msg))
+		# print 'sync at round %d' % (field.round)
 	elif cmd == 'response':
 		round = msg['round']
 		if round != field.round:
 			# something wrong
-			client.send("{'cmd': 'fail', 'reason':'round not match'}")
+			client.send("{'cmd': 'fail', 'round':%d, 'reason':'round not match'}"%(field.round))
 		else:
 			id = msg['id']
 			direction = msg['direction']
@@ -131,13 +110,19 @@ def parseCommand(field, data, client):
 			field.acceptCommand(name, direction)
 			client.send(msg_success)
 		
+
+def info():
+	print 'clients', clients
+	print 'field.snakes', field.snakes
+	print 'waited', waited
+	print 'ghosts', ghosts
 def main():
-	global clients, id_gener
+	global clients, id_gener, reseted, field, ghosts
 	# clients = {id:(name, client), ...}
 	clients = {}
 	id_gener = IDGener()
 	field = Field(fSize)
-	initField(field)
+	reseted = True
 	server = startServer()
 	splash = '-'*80 + '\nWelcome to SnakeAIC server!\n' + '-'*80
 	print splash
@@ -148,16 +133,21 @@ def main():
 
 	quit = False
 	tm = pygame.time.Clock()
+	tm_fps = pygame.time.Clock()
+	tm_fps.tick()
 
 	time_max = 1000/frame_rate
+	all_responsed = False
+	frame = 0
 	while not quit:
 		time_cost = 0
 		all_responsed = False
-		# while time_cost < time_max:
-		while not quit and not all_responsed:
+		while time_cost < time_max:
+		# while (not quit) and (not all_responsed):
 			tm.tick()
-			# input_ready, output_ready, exceptready = select.select(input, [], [], time_max - time_cost)
-			input_ready, output_ready, exceptready = select.select(input, [], [])
+			input_ready, output_ready, exceptready = select.select(input, [], [], float(time_max - time_cost)/1000)
+			# input_ready, output_ready, exceptready = select.select(input, [], [], 1)
+			# print 'input_ready',input_ready
 			for s in input_ready:
 				if s == server:
 					client, address = server.accept()
@@ -172,7 +162,8 @@ def main():
 						print 'reset'
 						clients = {}
 						field.reset()
-						initField(field)
+					if command in ['l', 'list']:
+						info()
 				else:
 					# handle a client socket
 					data = s.recv(config.data_maxsize)
@@ -188,26 +179,29 @@ def main():
 						# maybe connection lost
 						s.close()
 						input.remove(s)
-			for s in field.snakes:
-				if s.name not in field._commands:
+			# refresh all_responsed
+			all_responsed = True
+			for name, client in clients.itervalues():
+				if name != None and (name not in field._commands):
 					all_responsed = False
 					break
-			else:
-				all_responsed = True
 			time_cost += tm.tick()
 
+		# loop the game
 		tm.tick()
-		if not field.isWaiting():
-			ghosts = field.loop()
-		elif waited > config.max_waited:
-			field.reset()
-			initField(filed)
-			clients = {}
+		if field.started:
+			new_ghosts = field.loop()
+			names = [x[0] for x in clients.itervalues()]
+			for g in new_ghosts:
+				if g in names:
+					ghosts.add(g)
 			
 		time_max = max(1000/frame_rate - tm.tick(), 50)
 
-		tm.tick(frame_rate)
-		# print 'FPS:',tm.get_fps()
+		tm_fps.tick(frame_rate)
+		frame += 1
+		if frame % 50 == 0:
+			print 'FPS:',tm_fps.get_fps()
 	print 'Bye'
 		
 if __name__ == '__main__':

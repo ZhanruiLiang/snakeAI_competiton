@@ -42,6 +42,7 @@ class Field(object):
 		self.blocks = []
 		self._board = {}
 		self._commands = {}
+		self.started = False
 
 		size = self.size
 		self._initpos = [([(i, size[Y]/2) for i in xrange(5, 1, -1)], self.RIGHT),
@@ -52,10 +53,21 @@ class Field(object):
 		for i,j in itertools.product(xrange(n), xrange(m)):
 			self._board[i, j] = []
 
+		# add block
+		for i in xrange(size[0]):
+			for j in xrange(size[1]):
+				if i == 0 or i == size[0]-1 or j == 0 or j == size[1] - 1:
+					self._addContentAt((i,j), Block())
+		for y in xrange(3, 20, 7):
+			for x in xrange(7, 18):
+				self._addContentAt((x, y), Block())
+		# add food
+		for i in xrange(50):
+			self._add_food()
 		# self.tracker = Tracker('runlog.bz2')
 
-	def isWaiting(self):
-		return self.snakes == []
+	def start(self):
+		self.started = True
 
 	def register(self, snake):
 		"""
@@ -86,6 +98,8 @@ class Field(object):
 					raise self.RegisterError(self.getContentAt(node.pos))
 				else:
 					break
+		if len(self.snakes) > 0:
+			self.start()
 
 	def acceptCommand(self, name, direction):
 		self._commands[name] = direction
@@ -111,17 +125,19 @@ class Field(object):
 
 	def loop(self):
 		"""
-		run the game
+		run the game, return the ghost
 		"""
+		if not self.started:
+			return []
 		self.round += 1
 		# backup the snakes' tail in a dict, if a snake eat a food then it can retrieve it's tail
 		backup = {}
 
 		# move the snakes
 		for snake in self.snakes:
-			snake.direction = self._commands.get(snake.name, None)
-			if snake.direction == None:
-				snake.direction = 0
+			direction = self._commands.get(snake.name, None)
+			if direction != None:
+				snake.direction = direction
 			dx, dy = self.dirs[snake.direction]
 			p = snake.body[0].pos
 			next_p = (p[X] + dx) % self.size[X], (p[Y] + dy) % self.size[Y]
@@ -162,6 +178,9 @@ class Field(object):
 			snake.statistic.length = len(snake.body)
 
 		self._add_food()
+		if self.snakes == []:
+			self.reset()
+		return [x.name for x in to_die]
 
 	def _eat(self, snake, food):
 		snake.statistic.score += food.score
