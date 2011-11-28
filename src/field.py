@@ -1,6 +1,7 @@
 import itertools
 import pygame
 import random
+import bz2
 from tracker import Tracker
 from baseobj import *
 from snake import BaseSnake
@@ -43,6 +44,7 @@ class Field(object):
 		self._board = {}
 		self._commands = {}
 		self.started = False
+		self._sync_cache = None
 
 		size = self.size
 		self._initpos = [([(i, size[Y]/2) for i in xrange(5, 1, -1)], self.RIGHT),
@@ -100,6 +102,29 @@ class Field(object):
 					break
 		if len(self.snakes) > 0:
 			self.start()
+
+	def getSyncInfo(self):
+		if self._sync_cache and self._sync_cache[0] == self.round:
+			return self._sync_cache[1]
+		foods = [x.pos for x in self.foods]
+		blocks = [x.pos for x in self.blocks]
+		snakes = []
+		for snake in self.snakes:
+			snakes.append({'name':snake.name,
+				'body':[x.pos for x in snake.body],
+				'direction':snake.direction,
+				'stat':snake.statistic})
+
+		info = repr({'size':self.size,
+			'round':self.round,
+			'foods':foods, 'blocks':blocks, 'snakes':snakes})
+
+		l1 = len(info)
+		info = bz2.compress(info.replace(' ', ''))
+		l2 = len(info)
+		print 'compressed %f%%, result len %d'%(100 - float(l2)/l1 * 100, l2)
+		self._sync_cache = (self.round, info)
+		return info
 
 	def acceptCommand(self, name, direction):
 		self._commands[name] = direction

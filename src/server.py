@@ -1,4 +1,5 @@
 import pygame
+import bz2
 import itertools
 import config
 import sys
@@ -81,22 +82,14 @@ def parseCommand(field, data, client):
 		print 'client #%s leave this server' % (id)
 	elif cmd == 'sync':
 		id = msg['id']
-		foods = [x.pos for x in field.foods]
-		blocks = [x.pos for x in field.blocks]
-		snakes = []
-		for snake in field.snakes:
-			snakes.append({'name':snake.name,
-				'body':[x.pos for x in snake.body],
-				'direction':snake.direction,
-				'stat':snake.statistic})
-
-		new_msg = {'cmd':'sync_info', 
-			'size':field.size,
-			'round':field.round,
-			'foods':foods, 'blocks':blocks, 'snakes':snakes}
+		new_msg = {}
 		if clients[id][0] in ghosts:
 			new_msg['youlost'] = 1
-		client.send(repr(new_msg))
+		new_msg['cmd'] = 'sync_info'
+		new_msg['info'] = field.getSyncInfo()
+		new_msg = str(new_msg)
+		print 'sync len', len(new_msg)
+		client.send(new_msg)
 		# print 'sync at round %d' % (field.round)
 	elif cmd == 'response':
 		round = msg['round']

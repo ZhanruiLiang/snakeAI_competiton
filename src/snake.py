@@ -33,7 +33,7 @@ class BaseSnake(object):
 		return "<Snake names %s, direction=%s>"%(self.name, self.direction)
 
 class RenderSnake(BaseSnake):
-	def __init__(self, name, body, direction, stat, res_path='res/snake1.png'):
+	def __init__(self, name, body, direction, stat, res_path='res/snake3.png'):
 		self.name = name
 		self.body = body
 		self.direction = direction

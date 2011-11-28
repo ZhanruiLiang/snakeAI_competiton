@@ -2,6 +2,7 @@ import pygame
 import socket
 import config
 import sys
+import bz2
 from snake import RenderSnake
 from baseobj import *
 from field import Statistic, Field
@@ -44,6 +45,7 @@ class FieldClient(object):
 	dirs = Field.dirs
 
 	def __init__(self, server=None):
+		""" initialize objects, if has server param passed, connect to server"""
 		self._snakes = []
 		self._foods = []
 		self._blocks = []
@@ -56,6 +58,7 @@ class FieldClient(object):
 			self.connect(server)
 
 	def connect(self, server):
+		""" connect to server """
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.sock.connect((server, config.client_port))
 		msg = self._send("{'cmd':'add'}")
@@ -67,6 +70,7 @@ class FieldClient(object):
 			raise Exception(repr(msg))
 
 	def join(self, player):
+		""" join the player to the game, aka. request the server to add a snake."""
 		msg = self._send("{'cmd':'join','id':%d, 'name':'%s'}"%(self._id, player.name))
 		if msg['cmd'] == 'success':
 			self._player = player
@@ -75,32 +79,35 @@ class FieldClient(object):
 			raise
 
 	def quit(self):
-		"player quit the game, be continue watching"
+		""" player quit the game, be continue watching, use method disconnect if want to compeletely exit the client. """
 		self._send("{'cmd':'quit', 'id':%s}" % self._id)
 		self._player = None
 
 	def disconnect(self):
-		"leave the server"
+		""" leave the server. If not quit, then quit before leave. """
 		if self._player:
 			self.quit()
 		self._send("{'cmd':'leave', 'id':%d}" % self._id)
 		self.sock.close()
 
 	def _send(self, msg):
+		""" send a message to server, and return the result. """
 		self.sock.send(msg)
 		result = self.sock.recv(config.data_maxsize)
 		result = eval(result, {'__buildin__':None, 'Statistic':Statistic}, {})
 		return result
 
 	def sync(self):
+		# TODO, this implement is too ugly and slow...
 		msg = self._send("{'cmd':'sync', 'id':%d}"%self._id)
 		if msg['cmd'] == 'sync_info':
-			self.size = msg['size']
-			self._foods = msg['foods']
-			self._blocks = msg['blocks']
+			info = eval(bz2.decompress(msg['info']), {'__buildin__':None, 'Statistic':Statistic}, {})
+			self.size = info['size']
+			self._foods = info['foods']
+			self._blocks = info['blocks']
 			self._snakes = []
 
-			for s in msg['snakes']:
+			for s in info['snakes']:
 				self._snakes.append(RenderSnake(s['name'], s['body'], s['direction'], s['stat']))
 
 			if self._player:
@@ -111,7 +118,7 @@ class FieldClient(object):
 				else:
 					self._player = None
 
-			self._round = msg['round']
+			self._round = info['round']
 			self._board = {}
 			board = self._board
 			for x in self._foods:
@@ -128,11 +135,10 @@ class FieldClient(object):
 				self.quit()
 
 			# ask player to response
-			print self._last_round, self._round
+			# print self._last_round, self._round
 			if self._last_round == None or self._last_round != self._round:
 				# get into a new round
 				if self._player:
-					print 'fuck'
 					command = self._player.response()
 					self.sendCommand(command)
 					self._last_round = self._round
@@ -141,8 +147,9 @@ class FieldClient(object):
 		else:
 			print msg['reason']
 			raise
-				
+
 	def sendCommand(self, direction):
+		""" Send to responsed command to the server. """
 		msg = self._send("{'cmd':'response', 'id':%d, 'round':%d, 'direction':%s}"%(self._id, self._round, direction))
 		if msg['cmd'] == 'success':
 			pass

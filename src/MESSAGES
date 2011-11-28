@@ -6,13 +6,19 @@ prototypes can be:
 	'join': join(id, name)
 	'quit': quit(id, name)
 	'response': success = response(id, round, direction)
-	'sync': {foods, blocks, snakes} = sync(id)
+	'sync': {foods, blocks, snakes, youlost?} = sync(id)
 
 	'success'
 	'fail'
+
 
 For example:
 	'response': response(id, round, direction)
 	means the message has the string form:
 	{'cmd': 'response', 'id':'10389084', 'round':45, 'direction':3} 
 	and {'cmd':'success'} or {'cmd':'fail', 'reason':'...'} will be returned
+
+Detail:
+
+the return message of sync is something like
+{'cmd':'sync_info', 'youlost':1, 'info':'(compressed infos){'size':(30, 30), 'round':8, 'foods':[...], 'blocks':[...], ...}}
