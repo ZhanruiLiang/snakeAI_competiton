@@ -5,6 +5,7 @@ import config
 import sys
 import select
 import socket
+import xmlrpclib
 from random import randint
 from field import Field
 from snake import *
