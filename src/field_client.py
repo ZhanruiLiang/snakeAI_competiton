@@ -3,6 +3,7 @@ import socket
 import config
 import sys
 import bz2
+import xmlrpclib
 from snake import RenderSnake
 from baseobj import *
 from field import Statistic, Field
@@ -58,50 +59,43 @@ class FieldClient(object):
 			self.connect(server)
 
 	def connect(self, server):
-		""" connect to server """
-		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.sock.connect((server, config.client_port))
-		msg = self._send("{'cmd':'add'}")
-		if msg['cmd'] == 'success':
-			self._id = msg['id']
-			print 'synced'
-			self.sync()
+		""" connect to server, and sync for the first time """
+		self.server = xmlrpclib.ServerProxy('http://%s:%d/'%(server, config.server_port))
+		succ, msg = self.server.add()
+		if succ:
+			self._id = msg
+			self.server.sync(self._id)
 		else:
-			raise Exception(repr(msg))
+			# fail to connect server, should raise error
+			raise Exception("Fail to connect server %s"%(server))
 
 	def join(self, player):
 		""" join the player to the game, aka. request the server to add a snake."""
-		msg = self._send("{'cmd':'join','id':%d, 'name':'%s'}"%(self._id, player.name))
-		if msg['cmd'] == 'success':
+		succ, msg = self.server.join(self._id, player)
+
+		if succ:
 			self._player = player
 		else:
-			print msg['reason']
-			raise
+			raise Exception(msg)
 
 	def quit(self):
-		""" player quit the game, be continue watching, use method disconnect if want to compeletely exit the client. """
-		self._send("{'cmd':'quit', 'id':%s}" % self._id)
+		""" player quit the game, be continue watching,
+		use method disconnect if want to compeletely exit the client. """
+		succ, msg = self.server.quit(self._id)
+
 		self._player = None
 
 	def disconnect(self):
 		""" leave the server. If not quit, then quit before leave. """
 		if self._player:
 			self.quit()
-		self._send("{'cmd':'leave', 'id':%d}" % self._id)
-		self.sock.close()
-
-	def _send(self, msg):
-		""" send a message to server, and return the result. """
-		self.sock.send(msg)
-		result = self.sock.recv(config.data_maxsize)
-		result = eval(result, {'__buildin__':None, 'Statistic':Statistic}, {})
-		return result
+		succ, msg = self.server.leave(self._id)
 
 	def sync(self):
-		# TODO, this implement is too ugly and slow...
 		msg = self._send("{'cmd':'sync', 'id':%d}"%self._id)
-		if msg['cmd'] == 'sync_info':
-			info = eval(bz2.decompress(msg['info']), {'__buildin__':None, 'Statistic':Statistic}, {})
+		succ, msg = self.server.sync(self._id)
+		if succ:
+			info = msg['info']
 			self.size = info['size']
 			self._foods = info['foods']
 			self._blocks = info['blocks']
@@ -142,18 +136,13 @@ class FieldClient(object):
 					command = self._player.response()
 					self.sendCommand(command)
 					self._last_round = self._round
-		elif msg['cmd'] == 'waiting':
-			pass
 		else:
-			print msg['reason']
-			raise
+			raise Exception("Failed to sync with server, returned: %s"%str(msg))
 
-	def sendCommand(self, direction):
-		""" Send to responsed command to the server. """
-		msg = self._send("{'cmd':'response', 'id':%d, 'round':%d, 'direction':%s}"%(self._id, self._round, direction))
-		if msg['cmd'] == 'success':
-			pass
-		else:
+	def sendResponse(self, direction):
+		""" Send to responsed direction to the server. """
+		succ, msg = self.server.response(direction)
+		if not succ:
 			print >> sys.stderr, 'Warning: current round is %d, not %d'%(msg['round'],self._round)
 
 	def getContentAt(self, pos):
