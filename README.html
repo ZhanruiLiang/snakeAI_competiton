@@ -1,0 +1,129 @@
+<p>Title: SnakeAIC readme<br />
+Author: Ray<br />
+Email: ray040123@gmail.com<br />
+</p>
+<h1>Introduction:</h1>
+<p>This a AI competition platform, write your AI to competite with other's!</p>
+<h1>Prerequire:</h1>
+<p>You should have these installed in you system:</p>
+<ul>
+<li>
+<p>Python 2.6+</p>
+</li>
+<li>
+<p>Pygame 1.9+</p>
+</li>
+<li>
+<p>linux (currently, if you want start from the 'runserver' and 'runclient' scripts)</p>
+</li>
+</ul>
+<h1>How to start:</h1>
+<p>Before you start, you may want to change something in src/config.py .
+To start a server, just execute the script 'runserver'. 
+To quit a server, type 'q' or 'quit'</p>
+<p>To start a sample client, execute the script 'runclient'.</p>
+<p>To start a watching client, use command:<br />
+<code>cd src &amp;&amp; python client.py [-h host]</code><br />
+Note that 'host' defaults to 'localhost', you must specify the host if you are not going to connect to localhost</p>
+<p>To start with your own AI, put your AI python script in src/, say myAI.py, then use command:<br />
+<code>cd src &amp;&amp; python client -p myAI [-h host]</code><br />
+</p>
+<h1>Game rule:</h1>
+<h2>Objects</h2>
+<p>In the game, there are some objects:</p>
+<ul>
+<li>
+<p>block</p>
+</li>
+<li>
+<p>food</p>
+</li>
+<li>
+<p>snake's body</p>
+</li>
+<li>
+<p>snake's head</p>
+</li>
+<li>
+<p>empty place</p>
+</li>
+</ul>
+<h2>Rules:</h2>
+<ul>
+<li>
+<p>a snake is always moving, until it die</p>
+</li>
+<li>
+<p>a snake die after hit a snake's body or head or block</p>
+</li>
+<li>
+<p>a snake's total length grow up by one when it eat one food</p>
+</li>
+<li>
+<p>when a snake die, it disappers</p>
+</li>
+<li>
+<p>each round a snake will move one step, it can turn left or right, controlled by the player(AI)</p>
+</li>
+<li>
+<p>the field will generate the food randomly</p>
+</li>
+<li>
+<p>the blocks will not change</p>
+</li>
+<li>
+<p>it's not provided that there are always foods on the field</p>
+</li>
+<li>
+<p>the server won't wait until you finish you calculation, it update a round regularlly, so response as fast as you can, or you'll go randomly.</p>
+</li>
+</ul>
+<p>Each player's task is to controll the snake to eat more food, or to trap other players, if your AI is powerful enough.</p>
+<h1>To write your AI:</h1>
+<p>First you may want to see the example AI in src/exampleAI.py .
+What you need to do is to write a class named SnakeAI, it must be derive from class AISnake.
+You should implement two method:</p>
+<ul>
+<li>
+<p><code>SnakeAI.__init__</code></p>
+</li>
+<li>
+<p><code>SnakeAI.__response__</code></p>
+</li>
+</ul>
+<p>Things may be useful to you:<br />
+</p>
+<ul>
+<li>
+<p><code>from field import FieldClient as F</code><br />
+</p>
+</li>
+<li>
+<p><code>F.BODY, F.FOOD, F.HEAD, F.EMPTY,</code><br />
+</p>
+</li>
+<li>
+<p><code>field.getContentAt((x, y))</code><br />
+</p>
+</li>
+<li>
+<p><code>self.body = [(x0, y0), (x1, y1), (x2, y2), ...] ; self.body[0] is the snake's head</code><br />
+</p>
+</li>
+<li>
+<p><code>self.direction</code><br />
+</p>
+</li>
+<li>
+<p><code>field.dirs = (F.LEFT, F.DOWN, F.RIGHT, F.UP)</code><br />
+</p>
+</li>
+<li>
+<p><code>field.size = (W, H)</code><br />
+</p>
+</li>
+<li>
+<p><code>The coordinate system of the game, (0, 0) for upper-left, (0, W) for upper-right, (0, H) for lower-left, (W, H) for lower-right.</code><br />
+</p>
+</li>
+</ul>
