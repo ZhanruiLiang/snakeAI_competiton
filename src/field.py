@@ -113,16 +113,17 @@ class Field(object):
 			snakes.append({'name':snake.name,
 				'body':[x.pos for x in snake.body],
 				'direction':snake.direction,
-				'stat':snake.statistic})
+				})
+				# 'stat':snake.statistic})
 
-		info = repr({'size':self.size,
+		info = {'size':self.size,
 			'round':self.round,
-			'foods':foods, 'blocks':blocks, 'snakes':snakes})
+			'foods':foods, 'blocks':blocks, 'snakes':snakes}
 
-		l1 = len(info)
-		info = bz2.compress(info.replace(' ', ''))
-		l2 = len(info)
-		print 'compressed %f%%, result len %d'%(100 - float(l2)/l1 * 100, l2)
+		# l1 = len(info)
+		# info = bz2.compress(info.replace(' ', ''))
+		# l2 = len(info)
+		# print 'compressed %f%%, result len %d'%(100 - float(l2)/l1 * 100, l2)
 		self._sync_cache = (self.round, info)
 		return info
 

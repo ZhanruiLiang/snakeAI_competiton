@@ -1,6 +1,7 @@
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 from random import randint
+from snake import BaseSnake
 import config
 
 class FieldRequestHandler(SimpleXMLRPCRequestHandler):
@@ -10,7 +11,7 @@ class FieldRequestHandler(SimpleXMLRPCRequestHandler):
 
 class FieldServer(SimpleXMLRPCServer):
 	def __init__(self, addr, field):
-		SimpleXMLRPCServer.__init__(self, addr, requestHandler=FieldRequestHandler, logRequests=True)
+		SimpleXMLRPCServer.__init__(self, addr, requestHandler=FieldRequestHandler, logRequests=True, allow_none=True)
 
 		self.register_function(self._clifunc_add, 'add')
 		self.register_function(self._clifunc_leave, 'leave')
@@ -24,11 +25,10 @@ class FieldServer(SimpleXMLRPCServer):
 		# _ids is used to store the ids that generated. 
 		# when need to generate new id, randomly get one, if not in _ids, 
 		# then the id can be use
-		self._ids = set() 
+		self._ids = set()
 		# the added clients of the server, {id:name, id:name, ...}
 		self.clients = {}
 
-	
 	def serve(self, timeout):
 		""" timeout is count in ms """
 		if timeout != 0:
@@ -53,10 +53,10 @@ class FieldServer(SimpleXMLRPCServer):
 			id = self.generateID()
 			print 'client #%s added into this server' % (id)
 			self.clients[id] = None
-			return 1, {'id': id}
+			return 1, id
 		else:
 			return 0, 'Too many clients on this server, sorry.'
-	
+
 	def _clifunc_leave(self, id):
 		try:
 			del self.clients[id]
@@ -68,12 +68,16 @@ class FieldServer(SimpleXMLRPCServer):
 
 	def _clifunc_join(self, id, name):
 		""" Client with the id request to join the game using player name """
-		clients[id] = name
-		field = self.field
-		initpos, direction =  field.newInitPos()
-		snake = BaseSnake(name, initpos, direction, field)
-		field.register(snake)
-		print 'player %s joined the game' % (name)
+		try:
+			self.clients[id] = name
+			field = self.field
+			initpos, direction =  field.newInitPos()
+			snake = BaseSnake(name, initpos, direction, field)
+			field.register(snake)
+			print 'player %s joined the game' % (name)
+			return 1, ''
+		except field.RegisterError as e:
+			return 0, str(e)
 
 	def _clifunc_quit(self, id):
 		name = self.clients[id]
@@ -95,5 +99,4 @@ class FieldServer(SimpleXMLRPCServer):
 		if self.clients[id] not in self.field.getPlayers():
 			msg['youlost'] = 1
 		msg['info'] = self.field.getSyncInfo()
-		print msg
 		return 1, msg

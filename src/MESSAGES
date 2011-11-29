@@ -4,7 +4,7 @@ prototypes can be:
 	'add':(id) = add()
 	'leave': leave(id)
 	'join': join(id, name)
-	'quit': quit(id, name)
+	'quit': quit(id)
 	'response': success = response(id, round, direction)
 	'sync': {foods, blocks, snakes, youlost?} = sync(id)
 

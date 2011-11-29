@@ -70,7 +70,7 @@ def main():
 		pygame.display.flip()
 		timer.tick(2*frame_rate)
 		# print timer.get_fps()
-	
+
 	field.disconnect()
 	quitclean()
 	print "Bye"

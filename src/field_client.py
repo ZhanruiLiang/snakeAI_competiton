@@ -35,7 +35,6 @@ class FieldClient(object):
 	sendCommand(direction): send out the direction you want to go
 	connect(server): connect to the server
 	join(player): join the game, seperate connect and join because client can be a audience.
-	
 	"""
 	LEFT, DOWN, RIGHT, UP = 0, 1, 2, 3
 	FOOD = Field.FOOD
@@ -60,7 +59,7 @@ class FieldClient(object):
 
 	def connect(self, server):
 		""" connect to server, and sync for the first time """
-		self.server = xmlrpclib.ServerProxy('http://%s:%d/'%(server, config.server_port))
+		self.server = xmlrpclib.ServerProxy('http://%s:%d/'%(server, config.server_port), allow_none=True)
 		succ, msg = self.server.add()
 		if succ:
 			self._id = msg
@@ -71,7 +70,7 @@ class FieldClient(object):
 
 	def join(self, player):
 		""" join the player to the game, aka. request the server to add a snake."""
-		succ, msg = self.server.join(self._id, player)
+		succ, msg = self.server.join(self._id, player.name)
 
 		if succ:
 			self._player = player
@@ -92,17 +91,20 @@ class FieldClient(object):
 		succ, msg = self.server.leave(self._id)
 
 	def sync(self):
-		msg = self._send("{'cmd':'sync', 'id':%d}"%self._id)
 		succ, msg = self.server.sync(self._id)
 		if succ:
 			info = msg['info']
+			# print info
 			self.size = info['size']
-			self._foods = info['foods']
-			self._blocks = info['blocks']
+			self._foods = map(tuple, info['foods'])
+			self._blocks = map(tuple, info['blocks'])
 			self._snakes = []
 
 			for s in info['snakes']:
-				self._snakes.append(RenderSnake(s['name'], s['body'], s['direction'], s['stat']))
+				# self._snakes.append(RenderSnake(s['name'], s['body'], s['direction'], s['stat']))
+				# TODO add stat back
+				self._snakes.append(RenderSnake(s['name'], 
+					[tuple(x) for x in s['body']], s['direction'], Statistic()))
 
 			if self._player:
 				for s in self._snakes:
@@ -133,15 +135,15 @@ class FieldClient(object):
 			if self._last_round == None or self._last_round != self._round:
 				# get into a new round
 				if self._player:
-					command = self._player.response()
-					self.sendCommand(command)
+					resp = self._player.response()
+					self.sendResponse(resp)
 					self._last_round = self._round
 		else:
 			raise Exception("Failed to sync with server, returned: %s"%str(msg))
 
 	def sendResponse(self, direction):
 		""" Send to responsed direction to the server. """
-		succ, msg = self.server.response(direction)
+		succ, msg = self.server.response(self._id, self._round, direction)
 		if not succ:
 			print >> sys.stderr, 'Warning: current round is %d, not %d'%(msg['round'],self._round)
 
