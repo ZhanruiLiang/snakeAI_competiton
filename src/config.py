@@ -13,8 +13,7 @@ field_size1 = 30, 30
 grid_size = 20, 20
 # server-client stuff
 server_port = 50500
-client_port = 50500
-server_backlog = 5
+max_clients = 5
 data_maxsize = 4096
 # the max waited round, when reach the value, the game will be reset
 max_waited = 10
