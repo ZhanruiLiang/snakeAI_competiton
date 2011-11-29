@@ -207,6 +207,9 @@ class Field(object):
 			self.reset()
 		return [x.name for x in to_die]
 
+	def getPlayers(self):
+		return [x.name for x in self.snakes]
+
 	def _eat(self, snake, food):
 		snake.statistic.score += food.score
 		self._rmContentAt(food.pos, food)
