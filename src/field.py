@@ -100,6 +100,7 @@ class Field(object):
 					raise self.RegisterError(self.getContentAt(node.pos))
 				else:
 					break
+		self._sync_cache = None
 		if len(self.snakes) > 0:
 			self.start()
 

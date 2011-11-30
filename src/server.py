@@ -39,7 +39,12 @@ def main():
 	frame = 0
 	while not quit:
 		# all_responsed = False
-		server.serve(time_max)
+		time_cost = 0
+		cnt = 0
+		while time_cost < time_max:
+			server.serve(time_max - time_cost)
+			cnt += 1
+			time_cost += tm.tick()
 		# recieve command from stdin, commands can be:
 		#   start #   stop #   restart #   quit
 		inputready = select.select([sys.stdin], [], [], 0.010)[0]

@@ -68,7 +68,7 @@ def main():
 		# render.render_coor()
 		#
 		pygame.display.flip()
-		timer.tick(2*frame_rate)
+		timer.tick(frame_rate)
 		# print timer.get_fps()
 
 	field.disconnect()

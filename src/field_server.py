@@ -11,7 +11,7 @@ class FieldRequestHandler(SimpleXMLRPCRequestHandler):
 
 class FieldServer(SimpleXMLRPCServer):
 	def __init__(self, addr, field):
-		SimpleXMLRPCServer.__init__(self, addr, requestHandler=FieldRequestHandler, logRequests=True, allow_none=True)
+		SimpleXMLRPCServer.__init__(self, addr, requestHandler=FieldRequestHandler, logRequests=False, allow_none=True)
 
 		self.register_function(self._clifunc_add, 'add')
 		self.register_function(self._clifunc_leave, 'leave')
@@ -96,7 +96,8 @@ class FieldServer(SimpleXMLRPCServer):
 
 	def _clifunc_sync(self, id):
 		msg = {}
-		if self.clients[id] not in self.field.getPlayers():
+		name = self.clients[id]
+		if name != None and name not in self.field.getPlayers():
 			msg['youlost'] = 1
 		msg['info'] = self.field.getSyncInfo()
 		return 1, msg

@@ -63,7 +63,8 @@ class FieldClient(object):
 		succ, msg = self.server.add()
 		if succ:
 			self._id = msg
-			self.server.sync(self._id)
+			print 'sync first time'
+			self.sync()
 		else:
 			# fail to connect server, should raise error
 			raise Exception("Fail to connect server %s"%(server))
@@ -94,7 +95,6 @@ class FieldClient(object):
 		succ, msg = self.server.sync(self._id)
 		if succ:
 			info = msg['info']
-			# print info
 			self.size = info['size']
 			self._foods = map(tuple, info['foods'])
 			self._blocks = map(tuple, info['blocks'])
@@ -129,9 +129,10 @@ class FieldClient(object):
 			# test if this player lost
 			if 'youlost' in msg:
 				self.quit()
+				return
 
 			# ask player to response
-			# print self._last_round, self._round
+			print self._last_round, self._round
 			if self._last_round == None or self._last_round != self._round:
 				# get into a new round
 				if self._player:
