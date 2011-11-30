@@ -8,9 +8,9 @@ field_pos = 200, 0
 # the geometry of field
 field_size = 600, 600
 # how many grid are there in field
-field_size1 = 30, 30
+field_size1 = 40, 40
 # the grid must be a square
-grid_size = 20, 20
+grid_size = 15, 15
 # server-client stuff
 server_port = 50500
 max_clients = 5

@@ -13,7 +13,8 @@ class Render:
 	def __init__(self, field, surface):
 		self.field = field
 		self.grid_size = config.grid_size
-		self.color_bg = (0xff, 0xff, 0xaa)
+		# self.color_bg = (0xff, 0xff, 0xaa)
+		self.color_bg = (0xff, 0xff, 0xff)
 		self.surface = surface
 		self.load_pics()
 		self._frame = 0

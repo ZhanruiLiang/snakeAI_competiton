@@ -132,7 +132,7 @@ class FieldClient(object):
 				return
 
 			# ask player to response
-			print self._last_round, self._round
+			# print self._last_round, self._round
 			if self._last_round == None or self._last_round != self._round:
 				# get into a new round
 				if self._player:

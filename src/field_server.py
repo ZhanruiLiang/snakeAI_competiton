@@ -20,7 +20,6 @@ class FieldServer(SimpleXMLRPCServer):
 		self.register_function(self._clifunc_response, 'response')
 		self.register_function(self._clifunc_sync, 'sync')
 
-
 		self.field = field
 		# _ids is used to store the ids that generated. 
 		# when need to generate new id, randomly get one, if not in _ids, 
